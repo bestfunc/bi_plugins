@@ -1,0 +1,25 @@
+{
+  "name": "daily_report_plugins",
+  "owner": { "name": "bestfunc" },
+  "metadata": {
+    "description": "日报平台 Claude Code 插件包 —— 通过 MCP（OAuth 2.1 + PKCE）让 AI 代写日报插件、试跑、查历史。",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "daily-report-local",
+      "source": "./plugins/daily-report-local",
+      "description": "【本地 localhost:18923 — 本地 go run 部署的 daily-report 平台】查 / 写 / 跑插件 + 6 个 AI skill。"
+    },
+    {
+      "name": "daily-report-test",
+      "source": "./plugins/daily-report-test",
+      "description": "【测试环境】指向团队测试服务器的同一套插件，OAuth 自动发现 + 自动注册 client。"
+    },
+    {
+      "name": "daily-report-prod",
+      "source": "./plugins/daily-report-prod",
+      "description": "【生产环境】全权限（read + write + run），授权时按需勾选；OAuth 自动发现 + 自动注册 client。"
+    }
+  ]
+}
