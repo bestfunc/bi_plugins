@@ -10,8 +10,8 @@
   "mcpServers": {
     "daily-report": {
       "type": "http",
-      "url": "http://192.168.2.175:18923/api/mcp",
-      "httpUrl": "http://192.168.2.175:18923/api/mcp"
+      "url": "http://192.168.2.175:8332/api/mcp",
+      "httpUrl": "http://192.168.2.175:8332/api/mcp"
     }
   }
 }
