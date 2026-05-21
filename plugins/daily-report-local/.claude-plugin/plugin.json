@@ -3,8 +3,8 @@
   "description": "日报平台（本地 go run）—— 自编码 Python 插件、活报告、运行历史。AI 借 MCP 帮你写插件 + 试跑 + 查结果。",
   "version": "1.0.0",
   "author": { "name": "bestfunc" },
-  "homepage": "https://github.com/bestfunc/daily_report_plugins",
-  "repository": "https://github.com/bestfunc/daily_report_plugins",
+  "homepage": "https://github.com/bestfunc/bi_plugins",
+  "repository": "https://github.com/bestfunc/bi_plugins",
   "license": "Apache-2.0",
   "keywords": ["daily-report", "mcp", "plugin", "oauth"],
   "mcpServers": {

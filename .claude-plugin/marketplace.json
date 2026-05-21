@@ -1,5 +1,5 @@
 {
-  "name": "daily_report_plugins",
+  "name": "bi_plugins",
   "owner": { "name": "bestfunc" },
   "metadata": {
     "description": "日报平台 Claude Code 插件包 —— 通过 MCP（OAuth 2.1 + PKCE）让 AI 代写日报插件、试跑、查历史。",

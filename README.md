@@ -1,4 +1,4 @@
-# daily_report_plugins
+# bi_plugins
 
 > 日报平台（[bestfunc/daily-report](https://github.com/bestfunc/daily-report)）的 Claude Code 插件包。
 > 通过 MCP（OAuth 2.1 + PKCE + Dynamic Client Registration）让 AI 客户端代写日报插件、试跑、查历史。
@@ -21,7 +21,7 @@
 
 ```bash
 # 添加 marketplace
-claude /plugin marketplace add bestfunc/daily_report_plugins
+claude /plugin marketplace add bestfunc/bi_plugins
 
 # 安装某个 variant（按你的环境）
 claude /plugin add daily-report-local
@@ -57,7 +57,7 @@ claude /plugin add daily-report-local
 ## 反馈
 
 - 平台 issue: https://github.com/bestfunc/daily-report/issues
-- 本仓库 issue: https://github.com/bestfunc/daily_report_plugins/issues
+- 本仓库 issue: https://github.com/bestfunc/bi_plugins/issues
 
 ## License
 

@@ -3,8 +3,8 @@
   "description": "日报平台（生产）—— 全权 scope（mcp:read + mcp:write + mcp:run）。AI 可以查 / 写 / 触发，授权时按需勾选。",
   "version": "1.0.0",
   "author": { "name": "bestfunc" },
-  "homepage": "https://github.com/bestfunc/daily_report_plugins",
-  "repository": "https://github.com/bestfunc/daily_report_plugins",
+  "homepage": "https://github.com/bestfunc/bi_plugins",
+  "repository": "https://github.com/bestfunc/bi_plugins",
   "license": "Apache-2.0",
   "keywords": ["daily-report", "mcp", "plugin", "oauth"],
   "mcpServers": {
