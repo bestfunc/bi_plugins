@@ -1,22 +1,22 @@
 ---
-name: fix-or-extend-plugin
-description: 修改一个现有插件 —— 加字段 / 改逻辑 / 升级模板 / 改触发参数。重点：files 是全量替换不是增量。
-allowed-tools: list_plugins, get_plugin, update_plugin, try_run, get_run
+name: fix-or-extend-app
+description: 修改一个现有 App —— 加字段 / 改逻辑 / 升级模板 / 改触发参数。重点：files 是全量替换不是增量。
+allowed-tools: list_apps, get_app, update_app, try_run_endpoint
 ---
 
-# 🔧 修改 / 扩展现有插件
+# 🔧 修改 / 扩展现有 App
 
 ## 黄金原则
 
-`update_plugin(files=[...])` 是**全量替换**。没列出来的文件会消失。改一行也要把所有文件一起传。
+`update_app(files=[...])` 是**全量替换**。没列出来的文件会消失。改一行也要把所有文件一起传。
 
 ## 标准流程
 
 ### 1. 读全部当前文件
 
 ```
-> get_plugin slug=xxx
-[AI → get_plugin → 拿到 files[]: 完整的文件树 + 内容]
+> get_app slug=xxx
+[AI → get_app → 拿到 files[]: 完整的文件树 + 内容]
 ```
 
 ### 2. 在本地（AI 的 working memory）改
@@ -26,18 +26,18 @@ allowed-tools: list_plugins, get_plugin, update_plugin, try_run, get_run
 ### 3. PUT 全量
 
 ```
-> update_plugin slug=xxx, files=[全量数组], comment="fix: ..."
+> update_app slug=xxx, files=[全量数组], comment="fix: ..."
 [AI → 新版本号 + build pending]
 ```
 
 写好的 comment 是好习惯 —— 出问题翻 plugin_versions 表能看到。
 
-### 4. 等 build → try_run 验证
+### 4. 等 build → try_run_endpoint 验证
 
 ```
-> get_plugin 看 build_status
-> try_run（不传 credential_ids）
-> 如果 status=failed，走 debug-failed-run skill
+> get_app 看 build_status
+> try_run_endpoint(slug="xxx", endpoint_name="<endpoint>", params={})
+> 如果失败，走 debug-failed-run skill
 ```
 
 ## 常见修改场景

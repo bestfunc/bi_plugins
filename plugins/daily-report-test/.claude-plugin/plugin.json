@@ -1,12 +1,12 @@
 {
   "name": "daily-report-test",
   "description": "日报平台（测试环境）—— 团队共享的测试服务器。OAuth 自动发现 + 自动注册 client，浏览器一次同意即可。",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": { "name": "bestfunc" },
   "homepage": "https://github.com/bestfunc/bi_plugins",
   "repository": "https://github.com/bestfunc/bi_plugins",
   "license": "Apache-2.0",
-  "keywords": ["daily-report", "mcp", "plugin", "oauth"],
+  "keywords": ["daily-report", "mcp", "app", "oauth"],
   "mcpServers": {
     "daily-report": {
       "type": "http",

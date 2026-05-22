@@ -1,6 +1,6 @@
 ---
 name: daily-report-business-concepts
-description: 日报平台的核心业务概念 —— 插件 / 版本 / 运行 / 触发器 / 凭据 / 活报告 / 静态快照 / KV / Daily 归档。改任何 plugin 前先理解这些。
+description: 日报平台的核心业务概念 —— App / 版本 / 触发器 / 凭据 / 活报告 / 静态快照 / KV / Daily 归档。改任何 App 前先理解这些。
 ---
 
 # 📚 日报平台业务概念
@@ -8,25 +8,25 @@ description: 日报平台的核心业务概念 —— 插件 / 版本 / 运行 /
 ## 核心实体
 
 ```
-Plugin ── 1:N ── PluginVersion ── 1:N ── PluginFile
+App (plugin.yaml) ── 1:N ── AppVersion ── 1:N ── AppFile
    │
-   └── 1:N ── Trigger ── 1:N ── Run ── 1:1 ── RunArtifact
-                                            ├── doc        (emit_report)
-                                            ├── datasets   (emit_dataset)
-                                            ├── stdout/stderr
-                                            └── static_html (chromedp 烤的快照)
+   └── 1:N ── Trigger ── 每次触发 → 执行 endpoint → RunArtifact
+                                                   ├── doc        (emit_report)
+                                                   ├── datasets   (emit_dataset)
+                                                   ├── stdout/stderr
+                                                   └── static_html (chromedp 烤的快照)
 ```
 
-### Plugin
+### App
 
-逻辑上的一个"报告"。有 `slug`（URL）/ `name` / `current_version_id`。
+逻辑上的一个"报告"。有 `slug`（URL）/ `name` / `current_version_id`。配置文件仍叫 `plugin.yaml`（文件名不变）。
 
-### PluginVersion + PluginFile
+### AppVersion + AppFile
 
 **版本不可变**。每次保存 = 新版本号 + 新文件树。CLAUDE.md §4.3 红线。
 - `build_status`: pending → building → ready / build_failed
 - build = 在版本的 `lib_dir` 跑 `pip install -r config/requirements.txt --target=...`
-- build 成功 → 自动 promote 为 plugin.current_version_id
+- build 成功 → 自动 promote 为 app.current_version_id
 
 ### Trigger
 
@@ -34,11 +34,9 @@ Plugin ── 1:N ── PluginVersion ── 1:N ── PluginFile
 - `kind: manual_only` 只能从 UI / API 手动触发
 - `credential_bindings` 是显式绑定 alias → credential_id（覆盖自动匹配）
 
-### Run + RunArtifact
+### Endpoint
 
-每次执行的实例。`triggered_by`：`cron` / `manual` / `manual_dryrun` / `view`。
-- `view` 是 /r/<slug> 触发的 —— **不写 runs 表**（活报告不留历史）
-- 其他都写 + 生成 static_html 快照（chromedp 渲染当前模板 + 数据）
+在 `plugin.yaml` 的 `endpoints:` 段声明的函数入口。`try_run_endpoint` 必须指定 `endpoint_name`。每个 endpoint 对应 main.py 里的一个 Python 函数。
 
 ## 三种"数据持久化"
 
@@ -53,17 +51,17 @@ Plugin ── 1:N ── PluginVersion ── 1:N ── PluginFile
 ### 3. sdk.kv / sdk.daily
 
 跨执行持久化：
-- `sdk.kv.get/set/delete(key)` —— 64KB/key，按 plugin 隔离
+- `sdk.kv.get/set/delete(key)` —— 64KB/key，按 App 隔离
 - `sdk.daily.write/read(date)` —— 按天归档 JSON，5MB/day 上限
 
-是给插件**自己**用的状态（last_total / cache / 缓存中间结果）。不影响报告渲染。
+是给 App **自己**用的状态（last_total / cache / 缓存中间结果）。不影响报告渲染。
 
 ## 活报告 vs 静态快照
 
 | 维度 | 活报告 `/r/:slug` | 静态快照 `/r/:slug/runs/:run_id` |
 |---|---|---|
 | 触发 | 每次访问可重跑 | 不再跑，读 run_artifacts.static_html |
-| 数据时效 | 实时 | 固定到那次 run 的时刻 |
+| 数据时效 | 实时 | 固定到那次执行的时刻 |
 | 凭据 | 自动匹配 | 不需要（数据已烤） |
 | 可分享 | 可（受限于凭据可用性） | 100% 自包含 HTML |
 
@@ -80,7 +78,7 @@ Plugin ── 1:N ── PluginVersion ── 1:N ── PluginFile
 
 三档 fallback：
 1. plugin.yaml `template: default` → 用内置（推荐，AI 不必写 HTML）
-2. 否则用插件 ship 的 `view/template.html`（iframe srcdoc 沙箱）
+2. 否则用 App ship 的 `view/template.html`（iframe srcdoc 沙箱）
 3. 否则用平台默认编辑器主题
 
 模板 = JS 读 `window.report.{doc,datasets,...}` 自行渲染 DOM。
@@ -88,7 +86,7 @@ Plugin ── 1:N ── PluginVersion ── 1:N ── PluginFile
 ## 红线（不能违反）
 
 - 凭据明文不落日志 / 不入 credentials_snapshot（只存 id+name）
-- 版本永不可变 —— 一旦保存 plugin_versions 行，不要 UPDATE
-- runner 是**唯一**写 runs / run_artifacts 的地方
+- 版本永不可变 —— 一旦保存版本行，不要 UPDATE
+- runner 是**唯一**写 artifacts 的地方
 - DB migrations 只用 golang-migrate，禁 GORM AutoMigrate
 - cron 不补跑 —— 错过的触发直接丢，依赖 /r/<slug> 实时性兜底
