@@ -87,3 +87,33 @@ cache_ttl: 30   # 秒；/r/<slug> 重复访问的缓存窗口
 | 改 main.py 的全局 sdk.* 调用顺序 | runner 跑的是模块顶层，import 顺序 / 副作用都要注意 |
 
 如果改动是破坏性的（数据集 rename / required_* 减少），考虑**新建一个 slug**（v2 风格）而不是原地改。
+
+---
+
+## v1.x app 模型补遗（dev 分支必看）
+
+### MCP 工具入参形状
+
+| 工具 | arguments | 易错点 |
+|---|---|---|
+| `update_app` | `{slug或id, files: [{path, content}, ...]}` | `files` 是 **array of {path, content}**，传成 map 报 `cannot unmarshal object into ... []FileInput` |
+| `publish_app` | `{slug, version_id}` | 不接受 id；version_id 从 `get_app.current_version_id` 拿 |
+
+### save ≠ publish（A2 起）
+
+`update_app` 只产生新版本，**不会自动上线**。要先等 build_status=ready，再 `publish_app(slug=..., version_id=...)`：
+
+```python
+mcp.update_app(slug="x", files=[...])
+# → publish_hint: "v_n 已保存但未上线。等 build_status=ready 后调 publish_app(...)"
+mcp.get_app(slug="x")  # 轮询直到 build_status=ready
+mcp.publish_app(slug="x", version_id=<current_version_id>)
+```
+
+`auto_publish: true` 写进 plugin.yaml 可绕过两步流程（仅快速迭代用）。
+
+### endpoint 改动后
+
+- 改 main.py 的某个 endpoint 函数 → save + publish 即可，平台 SIGTERM 旧 worker
+- 改 plugin.yaml 加 / 删 endpoint → 必须 publish 才会生效（manifest 落在 plugin_versions）
+- 注意 cron trigger 引用的 endpoint 名：删 endpoint 前先 disable 相关 trigger，否则下次 fire 报 `endpoint not declared in manifest`

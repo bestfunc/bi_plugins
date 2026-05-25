@@ -151,3 +151,72 @@ try_run_endpoint(slug, endpoint_name, params)
 | build_failed | 看 `build_log_tail` —— 通常是 requirements.txt 包名拼写 |
 | try_run_endpoint 报 endpoint not found | plugin.yaml 里 `endpoints[].name` 拼错，或忘了加 `endpoints` 段 |
 | App 跑了 71ms 就 success 但啥都没渲染 | main() 包了函数没调，或代码在 `if __name__ == '__main__'` 后面 |
+
+---
+
+## v1.x app 模型补遗（dev 分支必看）
+
+> dev 分支已切到 v1.x app 小程序模型。175 生产仍是 v0.0.20 老 plugin 模型 —— 以下规则**仅适用于 dev / test 本地连**，连生产时这些细节不一定适用。
+
+### MCP 工具入参形状（最容易写错）
+
+| 工具 | arguments 形状 | 易错点 |
+|---|---|---|
+| `create_app` / `update_app` | `{slug或id, files: [{path, content}, ...]}` | `files` 是 **array of {path, content}**，不是 map！传成 dict 后端报 `cannot unmarshal object into ... []FileInput` |
+| `publish_app` | `{slug, version_id}` | **不接受 id 字段**；version_id 从 `get_app.current_version_id` 拿。错传 id 报 `slug 和 version_id 都必填` |
+| `try_run_endpoint` | `{slug, endpoint, params?, credential_ids?}` | endpoint 名必须在 manifest `endpoints[]` 里声明 |
+
+### endpoint 函数（v1.x 写法）
+
+每个 endpoint 是 main.py 顶层函数，**直接 return JSON**，不再用 `sdk.emit_report`：
+
+```python
+def summary(params):
+    return {"stations": [...], "totals": {...}}
+```
+
+manifest 里登记：
+```yaml
+endpoints:
+  - name: summary       # URL / cron 用的
+    function: summary   # main.py 里的函数名
+```
+
+### cron 真触发（dev ≥ commit 04ade70 才生效）
+
+历史 bug：`trigger.CreateInput` 之前漏 `endpoint_name` 字段 → HTTP/UI 建的 cron 都没 endpoint_name → scheduler 跳过 "no endpoint_name" → 不会真触发。dev 已修。
+
+建 cron：
+```bash
+POST /api/triggers
+{
+  "plugin_id": 14,
+  "name": "daily-8am",
+  "kind": "cron",
+  "cron_expr": "0 8 * * *",
+  "endpoint_name": "take_snapshot",   ← 必填
+  "params": {},
+  "enabled": true
+}
+```
+
+**cron-friendly endpoint 设计**：cron 触发拿到的 params 就是 trigger 里 `params` 字段（默认 `{}`），没上下文。需要数据的 endpoint 必须能**自取**：
+
+```python
+def take_snapshot(params):
+    import report_sdk.snapshot as snap
+    data = params.get("data")
+    if not data:
+        data = summary({"limit": 200})  # cron 调用走这条，自跑 summary
+    return {"snapshot_id": snap.create(template="dashboard", data=data, title="...")}
+```
+
+反例：endpoint 强制要 params 里有完整 data → cron 永远拿不到，trigger 每次都 error。
+
+### Snapshot 模板硬约束
+
+`sdk.snapshot.create` 走 chromedp sidecar 烤静态 HTML，**沙箱 ≤30s 渲染窗口、禁止 fetch / 跨域 / 动态 import**。
+
+- 模板能拿到的数据：`window.__SNAPSHOT__ = { data, title, tags }`
+- **想要交互（点击展开 modal）→ 把详情数据在 endpoint payload 里就 ship 过去**，模板不能再 fetch
+- `view/template.html`（动态，用 `dr.call()`）跟 `snapshots/<name>.html`（静态，用 `__SNAPSHOT__`）**分开维护**，别复用同一份 HTML

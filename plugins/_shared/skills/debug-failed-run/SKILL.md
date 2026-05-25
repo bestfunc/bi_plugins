@@ -62,3 +62,21 @@ allowed-tools: get_app, update_app, try_run_endpoint
 | 修了一个 bug 就直接结束 | 重 try_run_endpoint 验证 |
 | 改 main.py 不动 requirements.txt | 加新依赖时一起改 |
 | 拿 update_app 只传改动文件 | 拿当前全量 + 替换目标文件 |
+
+---
+
+## v1.x 常见错误对照（dev 分支）
+
+| 错 / 现象 | 含义 | 修法 |
+|---|---|---|
+| `cannot unmarshal object into ... []FileInput` | `update_app.files` 传成 map | 改成 array of `{path, content}` |
+| `slug 和 version_id 都必填` | `publish_app` 用了 id 字段 | 改 `{slug, version_id}` |
+| `endpoint not declared in manifest` | endpoint 没在 `plugin.yaml.endpoints[]` 登记，或 trigger 引用了已删 endpoint | 加 `{name, function}` 或 disable trigger |
+| `MCP_XXX_URL not set` / `AI_XXX_KEY not set` | alias 没绑上凭据 | 凭据 name 精确等于 alias（小写不敏感） |
+| AI 调 `HTTPError 404` | base_url 不含 `/v1` 而代码拼了 `/chat/completions` | 自适应：`base.endswith("/v1") ? base : base + "/v1"` + `/chat/completions` |
+| AI `HTTPError 400: Model not exist` | 凭据 `default_model` 字段不可信（可能填了网关下线的型号） | `list_ai_models(credential_id=X)` 看实际清单，hardcode 或修凭据 |
+| Worker 反复 crash,5min 3 次后自动 unpublish | python `sys.exit` / 未捕获异常 / stdin 被关 | 修代码 → publish 重新上;别死循环 publish + 调用 |
+| `scheduler: trigger N has no endpoint_name; skipping` | 老 trigger 没填 endpoint_name | 删了重建（带 endpoint_name）；dev `04ade70+` 才接受这个字段 |
+| 快照页白屏 / `/a/<slug>/snap/<id>` 404 | vite dev 没把这个路径代理到后端 | `vite.config.ts.proxy` 加 regex `^/a/[^/]+/snap/[^/]+$` |
+| 沙箱 iframe 报 `from origin 'null' has been blocked by CORS` | `/a/<slug>` 主页的 iframe sandbox 调 endpoint | vite `server.cors: {origin: "*"}`；`dr.call` 用绝对 origin URL |
+| 前端 / DB 中文乱码 | Windows worker stdout 默认 cp936/GBK | 已修（dev `5fc220c`）：worker.Spawn 强制 `PYTHONIOENCODING=utf-8` |
