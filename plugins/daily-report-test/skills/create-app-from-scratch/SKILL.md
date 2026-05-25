@@ -164,7 +164,7 @@ try_run_endpoint(slug, endpoint_name, params)
 |---|---|---|
 | `create_app` / `update_app` | `{slug或id, files: [{path, content}, ...]}` | `files` 是 **array of {path, content}**，不是 map！传成 dict 后端报 `cannot unmarshal object into ... []FileInput` |
 | `publish_app` | `{slug, version_id}` | **不接受 id 字段**；version_id 从 `get_app.current_version_id` 拿。错传 id 报 `slug 和 version_id 都必填` |
-| `try_run_endpoint` | `{slug, endpoint, params?, credential_ids?}` | endpoint 名必须在 manifest `endpoints[]` 里声明 |
+| `try_run_endpoint` | `{slug, endpoint_name, params?, credential_ids?}` | 字段名是 **`endpoint_name`** 不是 `endpoint`（写错报 `endpoint_name 必填`）;名字必须在 manifest `endpoints[].name` 里声明 |
 
 ### endpoint 函数（v1.x 写法）
 
