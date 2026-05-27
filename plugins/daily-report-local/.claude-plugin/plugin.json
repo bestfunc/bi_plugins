@@ -1,7 +1,7 @@
 {
   "name": "daily-report-local",
   "description": "日报平台（本地 go run）—— 自编码 Python App、活报告、endpoint 试跑。AI 借 MCP 帮你写 App + 试跑 + 查结果。",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": { "name": "bestfunc" },
   "homepage": "https://github.com/bestfunc/bi_plugins",
   "repository": "https://github.com/bestfunc/bi_plugins",

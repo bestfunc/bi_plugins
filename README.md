@@ -15,7 +15,7 @@
 |---|---|---|
 | `daily-report-local` | `http://localhost:18923` | 自己机器 `go run ./cmd/server` 时 |
 | `daily-report-test`  | `https://daily-report-test.bestfunc.com` | 团队测试环境 |
-| `daily-report-prod`  | `http://192.168.2.175:8332` | 生产（内网） |
+| `daily-report-prod`  | `https://bi.bestfunc.com` | 生产 |
 
 ## 安装（Claude Code）
 

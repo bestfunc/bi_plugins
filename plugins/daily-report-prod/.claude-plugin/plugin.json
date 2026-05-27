@@ -1,7 +1,7 @@
 {
   "name": "daily-report-prod",
   "description": "日报平台（生产）—— 全权 scope（mcp:read + mcp:write + mcp:run）。AI 可以查 / 写 / 触发 App，授权时按需勾选。",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": { "name": "bestfunc" },
   "homepage": "https://github.com/bestfunc/bi_plugins",
   "repository": "https://github.com/bestfunc/bi_plugins",
@@ -10,8 +10,8 @@
   "mcpServers": {
     "daily-report": {
       "type": "http",
-      "url": "http://192.168.2.175:8332/api/mcp",
-      "httpUrl": "http://192.168.2.175:8332/api/mcp"
+      "url": "https://bi.bestfunc.com/api/mcp",
+      "httpUrl": "https://bi.bestfunc.com/api/mcp"
     }
   }
 }

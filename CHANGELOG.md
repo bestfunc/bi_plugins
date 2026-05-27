@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 — 2026-05-27
+
+- **daily-report-prod** 入口从内网 `http://192.168.2.175:8332` 切到正式域名 `https://bi.bestfunc.com/api/mcp`（platform 已迁域名）。local / test / marketplace 跟随锁步同版。
+- ⚠️ `bi.bestfunc.com` 当前为自签 / 不受信任根证书，SDK 严格 TLS 会拒连；授权要通需服务端换公网受信任证书，或客户端设 `NODE_EXTRA_CA_CERTS` 信任该 CA。
+
 ## 1.2.0 — 2026-05-25
 
 对应日报平台 `v0.1.5`（175 已升级到 v1.x app 模型,本次跟随发版）。
