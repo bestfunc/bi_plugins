@@ -1,7 +1,7 @@
 {
   "name": "daily-report-prod",
   "description": "日报平台（生产）—— 全权 scope（mcp:read + mcp:write + mcp:run）。AI 可以查 / 写 / 触发 App，授权时按需勾选。",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "author": { "name": "bestfunc" },
   "homepage": "https://github.com/bestfunc/bi_plugins",
   "repository": "https://github.com/bestfunc/bi_plugins",

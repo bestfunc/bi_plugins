@@ -3,7 +3,7 @@
   "owner": { "name": "bestfunc" },
   "metadata": {
     "description": "日报平台 Claude Code 插件包 —— 通过 MCP（OAuth 2.1 + PKCE）让 AI 代写日报插件、试跑、查历史。",
-    "version": "1.2.1"
+    "version": "1.2.2"
   },
   "plugins": [
     {

@@ -14,7 +14,7 @@
 | variant | 指向 | 用什么场景 |
 |---|---|---|
 | `daily-report-local` | `http://localhost:18923` | 自己机器 `go run ./cmd/server` 时 |
-| `daily-report-test`  | `https://daily-report-test.bestfunc.com` | 团队测试环境 |
+| `daily-report-test`  | `http://192.168.2.121:8332` | 团队测试环境（内网） |
 | `daily-report-prod`  | `https://bi.bestfunc.com` | 生产 |
 
 ## 安装（Claude Code）

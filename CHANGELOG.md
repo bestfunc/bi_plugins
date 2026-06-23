@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2 — 2026-05-27
+
+- **daily-report-test** 入口从 `https://daily-report-test.bestfunc.com/api/mcp` 切到内网 `http://192.168.2.121:8332/api/mcp`（test 环境换部署位置）。local / prod / marketplace 跟随锁步同版。
+
 ## 1.2.1 — 2026-05-27
 
 - **daily-report-prod** 入口从内网 `http://192.168.2.175:8332` 切到正式域名 `https://bi.bestfunc.com/api/mcp`（platform 已迁域名）。local / test / marketplace 跟随锁步同版。
