@@ -73,7 +73,7 @@ psycopg2-binary>=2.9.10  # 新加
 ### 改 cache_ttl
 
 ```yaml
-cache_ttl: 30   # 秒；/r/<slug> 重复访问的缓存窗口
+cache_ttl: 30   # 秒；/a/<slug> 活报告重复访问的缓存窗口
 ```
 
 `cache_ttl: 0` = 每次访问都重跑（适合调试，正式用不要）。
@@ -82,7 +82,7 @@ cache_ttl: 30   # 秒；/r/<slug> 重复访问的缓存窗口
 
 | 动作 | 风险 |
 |---|---|
-| 改 slug | 旧 `/r/<旧slug>` 链接全死，分享出去的全部失效 |
+| 改 slug | 旧 `/a/<旧slug>` 链接全死，分享出去的全部失效 |
 | 删 emit_dataset 调用 | 老快照 OK，新快照前端少了那个 dataset 可能崩 |
 | 改 main.py 的全局 sdk.* 调用顺序 | runner 跑的是模块顶层，import 顺序 / 副作用都要注意 |
 
@@ -117,3 +117,10 @@ mcp.publish_app(slug="x", version_id=<current_version_id>)
 - 改 main.py 的某个 endpoint 函数 → save + publish 即可，平台 SIGTERM 旧 worker
 - 改 plugin.yaml 加 / 删 endpoint → 必须 publish 才会生效（manifest 落在 plugin_versions）
 - 注意 cron trigger 引用的 endpoint 名：删 endpoint 前先 disable 相关 trigger，否则下次 fire 报 `endpoint not declared in manifest`
+
+### 改 v3 类型（dag / service）App
+
+- dag / service App 的 manifest 是 **`tinia-repo.yaml`**（不是 `plugin.yaml`），改它走**同一组** `get_app` / `update_app` / `publish_app` MCP 工具（按文件树识别类型，无专用工具）
+- dag App 改完仍是 save ≠ publish 两步；改 `nodes/<key>/run.py` 或 `ui/*.tsx` 都要 publish 才生效
+- 改 UI mount 的 `.tsx`：publish 后用户**硬刷浏览器**（`/plugin` 或 `/_ui` 路径 index.html 可能 cache）
+- 改常驻服务代码 = 新版本 republish → 平台 supervisor 停旧实例拉新实例（串行，不新旧双连）；启用开关 / 重启走 HTTP `/api/apps/:id/resident-service`、`/api/resident-services/:id/restart`（无 MCP 工具）

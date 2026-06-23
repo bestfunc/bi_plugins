@@ -13,7 +13,7 @@ allowed-tools: get_app, update_app, try_run_endpoint
 | `try_run_endpoint` 返回 `status=failed` | 子进程 exit code != 0 或 SDK 抛了异常 |
 | `try_run_endpoint` 返回 `status=timeout` | 超过 `timeout_seconds` 被 kill |
 | `try_run_endpoint` 返回 `status=interrupted` | heartbeat 断了被 reaper 标记 |
-| `/r/<slug>` 返回 422 | 同上失败，但通过 live 路径暴露 |
+| `/a/<slug>` 返回 422 | 同上失败，但通过活报告 live 路径暴露 |
 
 ## 标准排错流程
 
@@ -80,3 +80,20 @@ allowed-tools: get_app, update_app, try_run_endpoint
 | 快照页白屏 / `/a/<slug>/snap/<id>` 404 | vite dev 没把这个路径代理到后端 | `vite.config.ts.proxy` 加 regex `^/a/[^/]+/snap/[^/]+$` |
 | 沙箱 iframe 报 `from origin 'null' has been blocked by CORS` | `/a/<slug>` 主页的 iframe sandbox 调 endpoint | vite `server.cors: {origin: "*"}`；`dr.call` 用绝对 origin URL |
 | 前端 / DB 中文乱码 | Windows worker stdout 默认 cp936/GBK | 已修（dev `5fc220c`）：worker.Spawn 强制 `PYTHONIOENCODING=utf-8` |
+
+## v3 类型（dag / service）+ API Key 错误对照
+
+| 错 / 现象 | 含义 | 修法 |
+|---|---|---|
+| `POST /api/dag/<slug>/<dag_key>` 报 404 | dag_key 既不是 `main` 也不在 `tinia-repo.yaml modules.nodes` 里 | 用 `main`（全 pipeline）或某个真实节点 key |
+| dag 跑通但 body 没生效 | DAG body 直接是 params，**误 wrap 了 `{params:...}`** | body 直接传 params 对象 |
+| dag 节点报 `sys.executable=''` / `Permission denied: ''` | worker 子进程缺 PATH（curated env 丢父变量） | 平台侧已修（worker.go 补 PATH+TZ）；自建 worker spawn 路径要带 PATH |
+| 日报日期回退 2 天（北京早晨 cron） | worker 无 TZ 回落 UTC | 平台侧已修（worker.go 条件转发 TZ） |
+| UI mount 页面 404（dist kind） | `DR_PLUGIN_BUNDLE_ROOT` 未配 / dist 目录没推到部署机 | 把 `dist/` 推到 `$DR_PLUGIN_BUNDLE_ROOT/<slug>/ui/<mount>/dist/` 再 publish |
+| UI mount 页面白屏（tsx kind） | `.tsx` import 了三 module 之外的包（如 axios / react-router） | 只 import `react` / `@platform/ui` / `lucide-react`；其余 fetch 自取 |
+| `/api/dr`+`/api/dag` 返 `401` | App 开了 `require_api_key` 但没带 / key 不存在 / 已禁用 / 已过期 | 带 `Authorization: Bearer dr_...` 或 `X-API-Key`，确认 key 有效 |
+| `/api/dr`+`/api/dag` 返 `403` | key 合法但 scope 不覆盖该 app/endpoint/dag | 改 key 的 `allowed` scope（`PUT /api/api-keys/:id`） |
+| `/api/dr`+`/api/dag` 返 `429` | 超过该 key 每分钟限流 | 调大 `rate_limit_per_min` 或降调用频率 |
+| 常驻服务状态 `circuit_open` | 连续多次失败进熔断**标签**（仍在退避重试，未停） | 查上游可达性 / `last_error`；恢复即自动重连，不需手动 unpublish |
+
+> ⚠️ DAG / 常驻服务 / API Key **没有 MCP 排错工具**——排错走 HTTP 返回码 + 平台日志 + `GET /api/resident-services` 状态端点。

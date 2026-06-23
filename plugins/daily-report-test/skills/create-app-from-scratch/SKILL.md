@@ -1,14 +1,16 @@
 ---
 name: create-app-from-scratch
-description: 从零创建一个日报平台 App。包括 main.py 入口约定、plugin.yaml manifest 字段、required_mcps / required_dbs 声明、endpoints 声明、内置模板选择、build + try_run_endpoint 校验。
+description: 从零创建一个 Smart Quality App。包括 endpoint（日报应用）的 main.py 入口约定、plugin.yaml manifest 字段、required_mcps / required_dbs 声明、endpoints 声明、内置模板选择、build + try_run_endpoint 校验；末尾覆盖 v3 dag（系统应用）/ service（常驻服务）类型。
 allowed-tools: list_apps, list_credentials, list_templates, get_template, create_app, get_app, try_run_endpoint
 ---
 
-# 🛠 从零创建一个日报 App
+# 🛠 从零创建一个 Smart Quality App
+
+> 本 skill 主体讲 **endpoint 类型（日报应用）**——MCP 工具全覆盖、最成熟。dag（系统应用）/ service（常驻服务）类型见末尾 v3 章节。
 
 ## 核心理念
 
-日报 App 是一份 **Python 文件 + plugin.yaml**，放进平台 → 自动 pip install → 给一个 `/r/<slug>` 链接 → 每次打开重新跑出最新数据。
+endpoint 类型 App 是一份 **Python 文件 + plugin.yaml**，放进平台 → 自动 pip install → 给一个 `/a/<slug>` 链接 → 每次打开重新跑出最新数据。
 
 ## 模块级执行 ≠ 函数定义
 
@@ -44,7 +46,7 @@ sdk.emit_report([...])
 
 | 字段 | 说明 |
 |---|---|
-| `slug` | URL 片段（`/r/<slug>`），全局唯一，建议小写连字符 |
+| `slug` | URL 片段（活报告 `/a/<slug>`），全局唯一，建议小写连字符 |
 | `name` | 显示名 |
 | `template` | 用 `default` 走内置（推荐），或省略后自带 `view/template.html` |
 | `required_dbs` / `required_mcps` / `required_ai` | 声明需要的凭据 alias（平台自动按类型匹配） |
@@ -92,7 +94,7 @@ sdk.emit_dataset("history_30d", {"rows": [...]})
 
 ```yaml
 entry: main.py
-cache_ttl: 60         # /r/<slug> 缓存秒数
+cache_ttl: 60         # /a/<slug> 活报告缓存秒数
 timeout_seconds: 60   # 子进程硬超时
 # required_dbs:       # 需要数据库时打开
 #   - alias: db
@@ -154,9 +156,9 @@ try_run_endpoint(slug, endpoint_name, params)
 
 ---
 
-## v1.x app 模型补遗（dev 分支必看）
+## app 模型补遗（endpoint 类型 · 全环境通用）
 
-> dev 分支已切到 v1.x app 小程序模型。175 生产仍是 v0.0.20 老 plugin 模型 —— 以下规则**仅适用于 dev / test 本地连**，连生产时这些细节不一定适用。
+> 三个环境（local / test / prod）现在都跑 app 小程序模型，以下规则全环境适用。
 
 ### MCP 工具入参形状（最容易写错）
 
@@ -220,3 +222,83 @@ def take_snapshot(params):
 - 模板能拿到的数据：`window.__SNAPSHOT__ = { data, title, tags }`
 - **想要交互（点击展开 modal）→ 把详情数据在 endpoint payload 里就 ship 过去**，模板不能再 fetch
 - `view/template.html`（动态，用 `dr.call()`）跟 `snapshots/<name>.html`（静态，用 `__SNAPSHOT__`）**分开维护**，别复用同一份 HTML
+
+---
+
+## v3 类型：dag（系统应用）/ service（常驻服务）
+
+平台 v3 起多了两类 App，manifest 从 `plugin.yaml` 换成 **`tinia-repo.yaml`**（平台靠这个文件名 derive App type）。
+
+> ⚠️ **MCP 工具边界**：建 / 改 / 发布 dag / service App **仍走同一组 MCP 工具**（`create_app` / `update_app` / `publish_app` / `get_app`——它们按文件树识别类型）。但**跑 DAG 节点、管理常驻服务、签发 API Key 没有 MCP 工具**，只能走 HTTP。别去找 `run_dag` / `restart_service` / `create_api_key` 这类工具，不存在。
+
+### dag（系统应用）
+
+一个 dag App = 一份 `tinia-repo.yaml` + 一个或多个 `nodes/<key>/`（每个节点 = `node.yaml` + `runtime/run.py`）。
+
+最小目录：
+```
+tinia-repo.yaml
+nodes/
+└── hello/
+    ├── node.yaml
+    ├── schemas/params.schema.json
+    └── runtime/{run.py, requirements.txt}
+```
+
+`tinia-repo.yaml` 关键字段：
+```yaml
+name: 我的系统应用
+description: ...
+required_dbs:                 # 跟 endpoint 同款，按 alias 自动绑凭据注入 env
+  - alias: smart_tpm
+modules:
+  nodes:                      # ★ 列出所有节点 key，必须跟 nodes/<key>/ 目录名一致
+    - hello
+  ui:                         # 可选：自带前端页
+    - name: main
+      path: ui/MyPage.tsx     # kind 默认 tsx（单 .tsx 运行时编译）
+      menu_label: 我的页面
+      menu_icon: BookOpen     # lucide 白名单图标（30 个，见 V3_NODE_DEV_GUIDE §9.2）
+```
+
+`run.py` 走 **stdin/stdout JSON-RPC**：从 stdin 读一行 task JSON（`{id, params, _blob_inputs?}`），向 stdout emit 事件行（`kind: progress|output|done|error`）。完整协议 + 6 个 emit helper 见平台 `docs/V3_NODE_DEV_GUIDE.md` §5（PoC 直接抄 `examples/v3-hello-world/`）。
+
+调用（**没有 MCP 工具，走 HTTP**）：
+```bash
+# main = 跑整条 pipeline；填某个 node_key = 跑单节点
+curl -X POST https://<host>/api/dag/<slug>/main -d '{"name":"PLC","count":5}'
+# body 直接是 params，不 wrap {params:...}
+```
+
+UI 挂载两种 kind：
+- `tsx`（默认）：单 `.tsx` 文件，运行时 babel 编译挂主站 React 树，访问 `/plugin/<slug>/<mount>`；只能 import `react` / `@platform/ui` / `lucide-react` 三个 module
+- `dist`（整 SPA）：`kind: dist`，整 vite build 产物，静态服务 `/_ui/<slug>/<mount>/`，dist 目录走文件系统 `DR_PLUGIN_BUNDLE_ROOT`（不进 DB）
+
+### service（常驻服务）
+
+`tinia-repo.yaml` 顶层加 `service:` 块，声明一个 **always-on、非请求驱动**的进程（如 SV30 实时数据流的 WS 桥）：
+```yaml
+slug: sv30-realtime
+name: SV30 实时数据流
+service:
+  entry: service/bridge.py            # 常驻入口，含长跑 serve
+  upstream:                           # 上游数据源列表（fan-in）
+    - { host: 192.168.1.101, port: 8090, channels: [1,2,3,4] }
+  tinia:
+    server_url: http://192.168.2.176:18720
+    license: service/tinia-sdk/.../license.json
+```
+
+平台 `residentsvc.Supervisor` 托管：复用裸子进程拉起原语但**不进 worker.Pool**（豁免 idle reaper / LRU / crash-unpublish）；进程退出走指数退避重 spawn（1s→30s），**绝不 auto-unpublish**，崩溃只标 `circuit_open` 不停重试自愈。
+
+启用 / 管理（**没有 MCP 工具，走 HTTP**）：
+```bash
+PUT  /api/apps/<id>/resident-service   {"is_resident_service": true}  # 启用
+GET  /api/resident-services                                            # 列全部 + 状态
+POST /api/resident-services/<id>/restart                               # 优雅重启
+```
+浏览器侧走 WS：平台反代 `GET /rtstream/<slug>` → 子进程下游 WS。常驻入口契约（`_startup` 先发、`serve(ctx)` 长跑、配置/数据走 stderr 不污染 stdout）+ 部署 SOP 见平台 `docs/superpowers/specs/2026-06-18-resident-service-design.md` + 示例 `examples/sv30-realtime/`。
+
+### 对外接口 API Key（给第三方开放 dag / endpoint）
+
+每个 App 有 `require_api_key` 开关（默认 false = 开放、零回归）。开启后 `/api/dr` + `/api/dag` 调用必须带 `Authorization: Bearer dr_...` 或 `X-API-Key: dr_...`，scope 可细到"只能调某 App 某 endpoint/dag"。管理走 HTTP `/api/api-keys`（**无 MCP 工具**），详见平台 `docs/EXTERNAL_API_GUIDE.md`。

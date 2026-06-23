@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.0.0 — 2026-06-23
+
+对应 Smart Quality 平台 master `v0.3.x` + `v3.0` 分支（三类 App / DAG / 常驻服务 / 对外接口 API Key）。
+
+- **品牌**：产品名"日报平台" → **Smart Quality 3.0**（散文 / 描述 / skill 正文）。机器 ID 全部不变（marketplace `bi_plugins`、variant ID `daily-report-{local,test,prod}`、`mcpServers` key `daily-report`、skill 目录名、入口 URL、GitHub repo）。"日报应用"作为 endpoint 类型的功能类目名保留。
+- **修过期事实**：活报告路径 `/r/<slug>` → **`/a/<slug>`**（静态快照 `/a/<slug>/snap/<id>`）；MCP 工具数 **13 → 23**（按平台 `mcpserver/tools.go` 实数核对，新增 `update_credential` / `export_app` / `import_app` / 4 个 email 工具）；移除杜撰的 `delete_app` MCP 工具（删 App 走 HTTP `DELETE /api/apps/:id`）。
+- **v3 能力覆盖**（基于平台真实文档写）：
+  - quickstart + business-concepts：三类 App（endpoint / dag / service）总览、真实 23 工具清单、v3 概念速查（节点 / DAG 调用 / UI mount tsx vs dist / 常驻服务 / 工位 DSN / 插件 migration / API Key）。
+  - create-app-from-scratch：末尾新增 dag（`tinia-repo.yaml` + nodes + stdin/stdout JSON-RPC）/ service（`service:` 块 + supervisor 托管 + `/rtstream`）创建路线 + API Key opt-in。
+  - debug-failed-run：新增 v3 + API Key 错误对照（DAG 404 / body 不 wrap / PATH·TZ / dist 404 / tsx import 限制 / 401·403·429 / circuit_open）。
+  - 反复强调 **DAG / 常驻服务 / API Key 没有 MCP 工具**，走 HTTP——零编造。
+
 ## 1.2.2 — 2026-05-27
 
 - **daily-report-test** 入口从 `https://daily-report-test.bestfunc.com/api/mcp` 切到内网 `http://192.168.2.121:8332/api/mcp`（test 环境换部署位置）。local / prod / marketplace 跟随锁步同版。

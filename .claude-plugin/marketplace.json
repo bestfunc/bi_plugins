@@ -2,14 +2,14 @@
   "name": "bi_plugins",
   "owner": { "name": "bestfunc" },
   "metadata": {
-    "description": "日报平台 Claude Code 插件包 —— 通过 MCP（OAuth 2.1 + PKCE）让 AI 代写日报插件、试跑、查历史。",
-    "version": "1.2.2"
+    "description": "Smart Quality Claude Code 插件包 —— 通过 MCP（OAuth 2.1 + PKCE）让 AI 代写 App（日报 / 系统应用 / 常驻服务）、试跑、查历史。",
+    "version": "3.0.0"
   },
   "plugins": [
     {
       "name": "daily-report-local",
       "source": "./plugins/daily-report-local",
-      "description": "【本地 localhost:18923 — 本地 go run 部署的 daily-report 平台】查 / 写 / 跑插件 + 6 个 AI skill。"
+      "description": "【本地 localhost:18923 — 本地 go run 部署的 Smart Quality 平台】查 / 写 / 跑 App + 6 个 AI skill。"
     },
     {
       "name": "daily-report-test",
